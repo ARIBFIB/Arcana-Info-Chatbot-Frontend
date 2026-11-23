@@ -1,0 +1,16 @@
+---
+description: Git commit rules — no co-authors, conventional format only
+alwaysApply: true
+---
+
+# Git commits
+
+When creating commits in this repository:
+
+- **Never** add `Co-authored-by`, `Co-Authored-By`, or any co-author trailer.
+- **Never** use `git commit --trailer` (especially not for Cursor or any AI tool).
+- Use only: `git commit -m "type: description"` (optional body via HEREDOC if needed).
+- Follow `docs/COMMIT_MESSAGES.md`: subject line must be `feat:`, `fix:`, `chore:`, etc.
+- Do not amend or rewrite commits to inject co-author lines.
+
+The Husky **commit-msg** hook strips any injected `Co-authored-by` lines and rejects invalid subjects.

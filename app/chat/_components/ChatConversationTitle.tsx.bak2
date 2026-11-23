@@ -1,0 +1,161 @@
+﻿"use client";
+
+import Image from "next/image";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { tokens } from "@/design-system";
+import type { ChatMessage } from "@/types/chat";
+
+type ChatConversationTitleProps = {
+  title: string;
+  chatId: string;
+  messages?: ChatMessage[];
+};
+
+export function ChatConversationTitle({
+  title,
+  messages = [],
+}: ChatConversationTitleProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const questions = useMemo(
+    () =>
+      messages.filter(
+        (m): m is Extract<ChatMessage, { role: "user" }> => m.role === "user",
+      ),
+    [messages],
+  );
+
+  const latestQuestion = questions[questions.length - 1];
+  const displayTitle = latestQuestion?.text ?? title;
+
+  const previousQuestions = useMemo(() => questions.slice(0, -1), [questions]);
+
+  const filteredQuestions = useMemo(() => {
+    if (!searchValue.trim()) return previousQuestions;
+    const q = searchValue.trim().toLowerCase();
+    return previousQuestions.filter((m) => m.text.toLowerCase().includes(q));
+  }, [previousQuestions, searchValue]);
+
+  const handleJumpTo = (messageId: string) => {
+    setIsOpen(false);
+    const el = document.getElementById(`chat-msg-${messageId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) return;
+    const timeout = setTimeout(() => setSearchValue(""), 0);
+    return () => clearTimeout(timeout);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative shrink-0">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        onClick={() => setIsOpen((v) => !v)}
+        className={`box-border flex h-[49px] w-[278.65px] cursor-pointer items-center justify-between rounded-[36px] border backdrop-blur-xl transition-[background,border-color] duration-200 ${isOpen ? "border-[var(--color-sidebar-border)] bg-[var(--color-dropdown-bg)]" : "border-[var(--color-sidebar-border)] bg-[var(--color-dropdown-bg)] hover:border-[var(--color-sidebar-border)] hover:bg-[var(--color-dropdown-bg)]"}`}
+        style={{
+          paddingTop: 19,
+          paddingBottom: 19,
+          paddingLeft: 31,
+          paddingRight: 23,
+        }}
+      >
+        <span
+          className="block max-w-[181px] cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-left text-sm font-bold leading-[260%]"
+          style={{ color: "var(--color-mist)" }}
+        >
+          {displayTitle}
+        </span>
+
+        <div
+          className={`flex h-[5px] w-[8.65px] shrink-0 items-center justify-center transition-transform duration-[250ms]${isOpen ? " rotate-180" : ""}`}
+        >
+          <Image src="/down_arrow_icon.svg" alt="" width={9} height={5} aria-hidden />
+        </div>
+      </button>
+
+      <div
+        role="menu"
+        className={`absolute top-[calc(100%+8px)] left-1/2 z-[2000] w-[260px] overflow-hidden rounded-xl border border-white/10 p-1 backdrop-blur-[20px] transition-[opacity,transform] duration-200 ${isOpen ? "pointer-events-auto translate-x-[-50%] translate-y-0 opacity-100" : "pointer-events-none translate-x-[-50%] translate-y-[-6px] opacity-0"}`}
+        style={{
+          background: "var(--color-dropdown-bg)",
+          boxShadow: tokens.shadow.dropdown,
+        }}
+      >
+        {questions.length > 0 ? (
+          <>
+            <div className="px-2 pt-1 pb-2">
+              <input
+                ref={searchInputRef}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="Search questions..."
+                className="w-full rounded-md border border-white/10 bg-white/[0.05] px-2.5 py-1.5 text-xs text-white placeholder:text-white/40 outline-none"
+              />
+            </div>
+
+            <div className="max-h-[220px] overflow-y-auto">
+              {filteredQuestions.length === 0 ? (
+                <p className="px-3 py-2.5 text-[12px] text-white/40">
+                  {searchValue.trim() ? "No matches" : "No previous questions yet"}
+                </p>
+              ) : (
+                filteredQuestions.map((q) => (
+                  <button
+                    key={q.id}
+                    type="button"
+                    role="menuitem"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleJumpTo(q.id);
+                    }}
+                    className="flex w-full cursor-pointer items-center rounded-lg border-none bg-transparent px-3 py-2 text-left transition-colors hover:bg-white/[0.07]"
+                  >
+                    <span className="block w-full truncate text-[12.5px] text-white/75">
+                      {q.text}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </>
+        ) : (
+          <p className="px-3 py-2.5 text-[12px] text-white/40">No questions yet</p>
+        )}
+      </div>
+    </div>
+  );
+}

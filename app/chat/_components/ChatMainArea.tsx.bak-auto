@@ -1,0 +1,11 @@
+﻿import type { ReactNode } from "react";
+
+type ChatMainAreaProps = {
+  children: ReactNode;
+};
+
+export function ChatMainArea({ children }: ChatMainAreaProps) {
+  return (
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">{children}</div>
+  );
+}

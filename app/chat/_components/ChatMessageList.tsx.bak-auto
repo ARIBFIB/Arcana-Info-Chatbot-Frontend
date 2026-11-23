@@ -1,0 +1,125 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
+import { showToast } from "@/lib/toast";
+import type { ChatMessage } from "@/types/chat";
+
+import { useChat } from "../_context/chat-context";
+import { ChatAssistantMessage } from "./ChatAssistantMessage";
+import { ChatDefaultGreeting } from "./ChatDefaultGreeting";
+import { ChatMessageBubble } from "./ChatMessageBubble";
+import { SIDEBAR_WIDTH } from "./ChatSidebar";
+import { ChatThinkingBlock } from "./ChatThinkingBlock";
+
+export type { ChatMessage } from "@/types/chat";
+
+type ChatMessageListProps = {
+  messages: ChatMessage[];
+  isLoading?: boolean;
+};
+
+export function ChatMessageList({ messages, isLoading }: ChatMessageListProps) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const {
+    sidebarOpen,
+    isDesktop,
+    handleSubmit,
+    handleStop,
+    isLoading: isChatLoading,
+  } = useChat();
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
+
+  const showDefaultGreeting = messages.length === 0 && !isLoading;
+  const handleRetry = (question: string) => {
+    if (isChatLoading) {
+      handleStop();
+      showToast.info("Response interrupted", "Retrying your message...");
+      // Give the abort a tick to settle before resubmitting
+      setTimeout(() => {
+        handleSubmit(question);
+      }, 150);
+      return;
+    }
+
+    handleSubmit(question);
+  };
+
+  if (showDefaultGreeting) {
+    return (
+      <div
+        style={{
+          left: sidebarOpen && isDesktop ? `${SIDEBAR_WIDTH}px` : "0px",
+          transition: "left 0.3s ease",
+        }}
+        className="pointer-events-none fixed top-16 right-0 bottom-0 z-[600] flex justify-center overflow-hidden"
+      >
+        <div
+          className="flex w-full max-w-[900px] flex-col justify-end px-3 pb-[210px] sm:px-4"
+          aria-live="polite"
+          aria-relevant="additions"
+        >
+          <ChatDefaultGreeting />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="mx-auto box-border flex w-full max-w-[900px] flex-col gap-6 px-3 pt-6 pb-52 sm:gap-8 sm:px-4 sm:pt-10 sm:pb-56"
+      aria-live="polite"
+      aria-relevant="additions"
+    >
+      {messages.map((msg, idx) =>
+        msg.role === "user" ? (
+          <div
+            key={msg.id}
+            id={`chat-msg-${msg.id}`}
+            style={{ scrollMarginTop: "var(--chat-content-offset)" }}
+          >
+            <ChatMessageBubble
+              message={msg.text}
+              onRetry={() => handleRetry(msg.text)}
+            />
+          </div>
+        ) : (
+          <div
+            key={msg.id}
+            id={`chat-msg-${msg.id}`}
+            style={{ scrollMarginTop: "var(--chat-content-offset)" }}
+          >
+            <ChatAssistantMessage
+              content={msg.content}
+              thinkingDurationSeconds={msg.thinkingDurationSeconds}
+              onRetry={() => {
+                const prevUser = [...messages.slice(0, idx)]
+                  .reverse()
+                  .find((m) => m.role === "user");
+                if (prevUser && prevUser.role === "user") {
+                  handleRetry(prevUser.text);
+                }
+              }}
+            />
+          </div>
+        ),
+      )}
+
+      {/* {isLoading && (
+        <div className="mb-10">
+          <ChatShimmerMessage />
+        </div>
+      )} */}
+      {isLoading && (
+        <div className="mb-10">
+          <ChatThinkingBlock />
+        </div>
+      )}
+
+      <div ref={bottomRef} />
+    </div>
+  );
+}

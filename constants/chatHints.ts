@@ -1,0 +1,17 @@
+export const CHAT_HINTS = [
+  "Ask Anything",
+  // "What is the medical insurance coverage limit?",
+  // "How do I apply for maternity or paternity leave?",
+  // "Which hospitals are in the network for my insurance?",
+  // "What are the public holidays for 2026?",
+  // "How do I submit a reimbursement request?",
+  // "What is the work from home policy?",
+  // "How do I update my emergency contact information?",
+  // "What happens to unused leaves at year end?",
+  // "How do I apply for a salary advance?",
+  // "What is the exit clearance process?",
+  // "How do I access my payslips?",
+  // "What is the late arrival and attendance policy?",
+  // "How do I enroll my dependents in the insurance plan?",
+  // "What is the performance review cycle?",
+];

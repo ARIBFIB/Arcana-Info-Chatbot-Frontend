@@ -1,0 +1,71 @@
+﻿"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+import { useChat } from "../_context/chat-context";
+import { ChatMessageList } from "./ChatMessageList";
+import { ChatSearchBar } from "./ChatSearchBar";
+
+export function ChatConversationView() {
+  const {
+    messages,
+    handleSubmit,
+    isLoading,
+    isDesktop,
+    sidebarOpen,
+    searchBarRef,
+    handleStop,
+  } = useChat();
+
+  const maxWidth = sidebarOpen && isDesktop ? 900 : 1100;
+
+  // FIX: search bar "position: fixed" + backdrop-blur combo use karta hai.
+  // isLoading toggle hone par (message send/receive) Chromium isko stale
+  // render kar deta hai. Forcing remount (via key) repaint clean kar deta hai.
+  const [repaintKey, setRepaintKey] = useState(0);
+  const prevLoading = useRef(isLoading);
+  useEffect(() => {
+    if (prevLoading.current !== isLoading) {
+      prevLoading.current = isLoading;
+      const t = setTimeout(() => setRepaintKey((k) => k + 1), 50);
+      return () => clearTimeout(t);
+    }
+  }, [isLoading]);
+
+  return (
+    <div
+      className="relative min-h-0 flex-1 overflow-y-auto"
+      style={{
+        paddingTop: "var(--chat-content-offset)",
+        scrollPaddingTop: "var(--chat-content-offset)",
+      }}
+    >
+      <ChatMessageList messages={messages} isLoading={isLoading} />
+
+      <div
+  ref={searchBarRef}
+  style={{
+    left: sidebarOpen && isDesktop ? "280px" : "120px",
+    right: "0px",
+    transition: "left 0.3s ease",
+    transform: "translateZ(0)",
+  }}
+  className="fixed bottom-4 z-[500] flex justify-center will-change-transform sm:bottom-6 md:bottom-8"
+>
+        <div
+          style={{
+            maxWidth: `${maxWidth}px`,
+            transition: "max-width 0.3s ease",
+          }}
+          className="w-[94%] px-2 sm:w-[90%] sm:px-4"
+        >
+          <ChatSearchBar
+            onSubmit={handleSubmit}
+            onStop={handleStop}
+            isLoading={isLoading}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

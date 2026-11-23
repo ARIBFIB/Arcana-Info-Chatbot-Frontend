@@ -1,0 +1,16 @@
+import type { ReactNode } from "react";
+
+type ChatMainAreaProps = {
+  children: ReactNode;
+};
+
+export function ChatMainArea({ children }: ChatMainAreaProps) {
+  return (
+    <div
+      className="flex h-screen w-full flex-col overflow-hidden"
+      style={{ paddingTop: "var(--chat-header-height)" }}
+    >
+      {children}
+    </div>
+  );
+}

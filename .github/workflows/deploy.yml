@@ -1,0 +1,42 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, frontend-prod]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load production env
+        run: |
+          echo "Loading production environment file..."
+          cp /opt/aichatbot/frontend/.env .env
+
+          echo ".env file copied successfully"
+          echo "Checking env file exists:"
+          ls -la .env
+
+      - name: Deploy
+        run: |
+          echo "Starting Docker build..."
+          docker compose build
+
+          echo "Docker build completed"
+
+          echo "Starting containers..."
+          docker compose up -d
+
+          echo "Containers started successfully"
+
+      - name: Verify deployment
+        run: |
+          echo "Running containers:"
+          docker ps
+
+          echo "Deployment finished"

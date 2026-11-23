@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+set -eu
+
+echo ""
+echo "[husky] 1/4 Prettier — check formatting (npm run format:check)"
+if ! npm run format:check; then
+  echo ""
+  echo "[husky] Prettier check failed."
+  echo ""
+  echo "  Format your code, then stage the changes and commit again:"
+  echo "    npm run format"
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "[husky] 2/4 lint-staged — ESLint --fix on staged files"
+npx lint-staged
+
+echo ""
+echo "[husky] 3/4 ESLint — full project (npm run lint)"
+npm run lint
+
+echo ""
+echo "[husky] 4/4 Production build (npm run build)"
+npm run build
+
+echo ""
+echo "[husky] Pre-commit checks passed."
